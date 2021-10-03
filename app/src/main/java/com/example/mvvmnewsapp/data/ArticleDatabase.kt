@@ -16,7 +16,7 @@ abstract class ArticleDatabase:RoomDatabase() {
         @Volatile
         private var INSTANCE:ArticleDatabase? = null
 
-        fun invoke(context: Context):ArticleDatabase{
+        operator fun invoke(context: Context):ArticleDatabase{
             val tempInstance = INSTANCE
             if(tempInstance != null){
                 return tempInstance
