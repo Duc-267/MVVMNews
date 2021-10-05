@@ -6,14 +6,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.mvvmnewsapp.R
 import com.example.mvvmnewsapp.adapters.NewsAdapter
+import com.example.mvvmnewsapp.data.ArticleDatabase
 import com.example.mvvmnewsapp.databinding.FragmentBreakingNewsBinding
+import com.example.mvvmnewsapp.repository.NewsRepository
 import com.example.mvvmnewsapp.ui.MainActivity
 import com.example.mvvmnewsapp.util.Resources
 import com.example.mvvmnewsapp.viewmodel.NewsViewModel
+import com.example.mvvmnewsapp.viewmodel.NewsViewModelProviderFactory
 
 
 class BreakingNewsFragment: Fragment(R.layout.fragment_breaking_news) {
@@ -35,11 +38,11 @@ class BreakingNewsFragment: Fragment(R.layout.fragment_breaking_news) {
         super.onViewCreated(view, savedInstanceState)
         viewModel = (activity as MainActivity).viewModel
         setUpRecycleView()
-        viewModel.breakingNews.observe(viewLifecycleOwner, Observer {
+        viewModel.breakingNews.observe(viewLifecycleOwner, {
             when(it){
                 is Resources.Success -> {
                     hideSuccessBar()
-                    it.data?.let { newsResponse ->  
+                    it.data?.let { newsResponse ->
                         newsAdapter.differ.submitList(newsResponse.articles)
                     }
                 }
@@ -52,7 +55,6 @@ class BreakingNewsFragment: Fragment(R.layout.fragment_breaking_news) {
                     showSuccessBar()
                 }
             }
-
         })
     }
 
