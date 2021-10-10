@@ -12,10 +12,12 @@ import kotlinx.coroutines.launch
 import retrofit2.Response
 
 class NewsViewModel(
-    val newsRepository: NewsRepository
+    private val newsRepository: NewsRepository
 ):ViewModel() {
     private var breakingNewsPageNumber = 1
     val breakingNews:MutableLiveData<Resources<NewsResponse>> = MutableLiveData()
+    private var latestBreakingNewsResponse: NewsResponse? = null
+    private var latestSearchNewsResponse: NewsResponse? = null
     private var searchNewsPageNumber = 1
     val searchNews:MutableLiveData<Resources<NewsResponse>> = MutableLiveData()
 
@@ -23,7 +25,7 @@ class NewsViewModel(
         getBreakingNews("us")
     }
 
-    private fun getBreakingNews(countryCode: String){
+    fun getBreakingNews(countryCode: String){
         viewModelScope.launch(Dispatchers.IO) {
             breakingNews.postValue(Resources.Loading())
             val response = newsRepository.getBreakingNews(countryCode, breakingNewsPageNumber)
@@ -41,18 +43,32 @@ class NewsViewModel(
 
 
     private fun handleBreakingNewsResponse(response: Response<NewsResponse>):Resources<NewsResponse>{
-        if(response.isSuccessful){
+        if(response.isSuccessful) {
             response.body()?.let { resourcesResponse ->
-                return Resources.Success(resourcesResponse)
+                breakingNewsPageNumber++
+                if (latestBreakingNewsResponse != null) {
+                    latestBreakingNewsResponse = resourcesResponse
+                } else {
+                    val oldList = latestBreakingNewsResponse?.articles
+                    oldList?.addAll(resourcesResponse.articles)
+                }
+                return Resources.Success(latestBreakingNewsResponse?: resourcesResponse)
             }
         }
         return Resources.Error(response.message())
     }
 
     private fun handleSearchNewsResponse(response: Response<NewsResponse>):Resources<NewsResponse>{
-        if(response.isSuccessful){
+        if(response.isSuccessful) {
             response.body()?.let { resourcesResponse ->
-                return Resources.Success(resourcesResponse)
+                searchNewsPageNumber++
+                if (latestSearchNewsResponse != null) {
+                    latestSearchNewsResponse = resourcesResponse
+                } else {
+                    val oldList = latestSearchNewsResponse?.articles
+                    oldList?.addAll(resourcesResponse.articles)
+                }
+                return Resources.Success(latestSearchNewsResponse?: resourcesResponse)
             }
         }
         return Resources.Error(response.message())
@@ -73,6 +89,5 @@ class NewsViewModel(
             newsRepository.deleteSavedNews(article)
         }
     }
-
 
 }
