@@ -14,7 +14,7 @@ import retrofit2.Response
 class NewsViewModel(
     private val newsRepository: NewsRepository
 ):ViewModel() {
-    private var breakingNewsPageNumber = 1
+    var breakingNewsPageNumber = 1
     val breakingNews:MutableLiveData<Resources<NewsResponse>> = MutableLiveData()
     private var latestBreakingNewsResponse: NewsResponse? = null
     private var latestSearchNewsResponse: NewsResponse? = null

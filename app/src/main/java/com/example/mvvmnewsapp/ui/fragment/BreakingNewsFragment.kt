@@ -41,11 +41,19 @@ class BreakingNewsFragment: Fragment(R.layout.fragment_breaking_news) {
             val totalVisibleItemCount = layoutManager.childCount
             val totalItemCount = layoutManager.itemCount
 
-            val isNotLoadingAndNotLoadPage = !isLastPage && !isLoading
+            val isNotLoadingAndNotLastPage = !isLastPage && !isLoading
             val isAtLastItem = firstVisibleItemPosition + totalVisibleItemCount >= totalItemCount
             val isNotAtBeginning = firstVisibleItemPosition >= 0
             val isTotalMoreThanVisible = totalItemCount > QUERY_PAGE_SIZE
+            val shouldPaginate = isNotAtBeginning && isAtLastItem && isNotLoadingAndNotLastPage
+                    && isTotalMoreThanVisible && isScrolling
 
+            if(shouldPaginate){
+                viewModel.getBreakingNews("us")
+                isScrolling = false
+            } else {
+                binding.rvBreakingNews.setPadding(0, 0, 0, 0)
+            }
 
 
         }
@@ -77,7 +85,9 @@ class BreakingNewsFragment: Fragment(R.layout.fragment_breaking_news) {
                 is Resources.Success -> {
                     hideSuccessBar()
                     it.data?.let { newsResponse ->
-                        newsAdapter.differ.submitList(newsResponse.articles)
+                        newsAdapter.differ.submitList(newsResponse.articles.toList())
+                        val totalPages = newsResponse.totalResults / QUERY_PAGE_SIZE + 2
+                        isLastPage = viewModel.breakingNewsPageNumber == totalPages
                     }
                 }
                 is Resources.Error -> {
@@ -97,14 +107,17 @@ class BreakingNewsFragment: Fragment(R.layout.fragment_breaking_news) {
         binding.rvBreakingNews.apply {
             adapter = newsAdapter
             layoutManager = LinearLayoutManager(activity)
+            addOnScrollListener(this@BreakingNewsFragment.scrollListener)
         }
     }
 
     private fun hideSuccessBar(){
         binding.paginationProgressBar.visibility = View.INVISIBLE
+        isLoading = false
     }
     
     private fun showSuccessBar(){
         binding.paginationProgressBar.visibility = View.VISIBLE
+        isLoading = true
     }
 }
