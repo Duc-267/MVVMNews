@@ -5,10 +5,12 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AbsListView
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.mvvmnewsapp.R
 import com.example.mvvmnewsapp.adapters.NewsAdapter
 import com.example.mvvmnewsapp.databinding.FragmentSearchNewsBinding
@@ -37,6 +39,37 @@ class SearchNewsFragment: Fragment(R.layout.fragment_search_news) {
         return binding.root
     }
 
+    private var isLoading = false
+    private var isLastPage = false
+    private var isScrolling = false
+
+    val scrollListener = object : RecyclerView.OnScrollListener(){
+        override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+            if(newState == AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL){
+                isScrolling = true
+            }
+        }
+
+        override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+            val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+            val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
+            val totalVisibleItemCount = layoutManager.childCount
+            val totalItemCount = layoutManager.itemCount
+
+            val isNotLoadingAndNotLastPage = !isLastPage && !isLoading
+            val isAtLastItem = firstVisibleItemPosition + totalVisibleItemCount >= totalItemCount
+            val isNotAtBeginning = firstVisibleItemPosition >= 0
+            val isTotalMoreThanVisible = totalItemCount >= Constants.QUERY_PAGE_SIZE
+            val shouldPaginate = isNotAtBeginning && isAtLastItem && isNotLoadingAndNotLastPage
+                    && isTotalMoreThanVisible && isScrolling
+
+            if(shouldPaginate) {
+                viewModel.getSearchNews(binding.etSearch.text.toString())
+                isScrolling = false
+                Log.d(TAG, "ShouldPaginate: true")
+            }
+        }
+    }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         viewModel = (activity as MainActivity).viewModel
@@ -67,6 +100,11 @@ class SearchNewsFragment: Fragment(R.layout.fragment_search_news) {
                     hideSuccessBar()
                     it.data?.let { newsResponse ->
                         newsAdapter.differ.submitList(newsResponse.articles)
+                        val totalPages = newsResponse.totalResults / Constants.QUERY_PAGE_SIZE + 2
+                        isLastPage = viewModel.breakingNewsPageNumber == totalPages
+                        if(isLastPage){
+                            binding.rvSearchNews.setPadding(0, 0, 0, 0)
+                        }
                     }
                 }
                 is Resources.Error -> {
@@ -85,14 +123,17 @@ class SearchNewsFragment: Fragment(R.layout.fragment_search_news) {
         binding.rvSearchNews.apply {
             adapter = newsAdapter
             layoutManager = LinearLayoutManager(activity)
+            addOnScrollListener(this@SearchNewsFragment.scrollListener)
         }
     }
 
     private fun hideSuccessBar(){
         binding.paginationProgressBar.visibility = View.INVISIBLE
+        isLoading = false
     }
 
     private fun showSuccessBar(){
         binding.paginationProgressBar.visibility = View.VISIBLE
+        isLoading = true
     }
 }

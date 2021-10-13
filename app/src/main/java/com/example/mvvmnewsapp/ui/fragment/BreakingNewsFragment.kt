@@ -44,18 +44,15 @@ class BreakingNewsFragment: Fragment(R.layout.fragment_breaking_news) {
             val isNotLoadingAndNotLastPage = !isLastPage && !isLoading
             val isAtLastItem = firstVisibleItemPosition + totalVisibleItemCount >= totalItemCount
             val isNotAtBeginning = firstVisibleItemPosition >= 0
-            val isTotalMoreThanVisible = totalItemCount > QUERY_PAGE_SIZE
+            val isTotalMoreThanVisible = totalItemCount >= QUERY_PAGE_SIZE
             val shouldPaginate = isNotAtBeginning && isAtLastItem && isNotLoadingAndNotLastPage
                     && isTotalMoreThanVisible && isScrolling
 
-            if(shouldPaginate){
+            if(shouldPaginate) {
                 viewModel.getBreakingNews("us")
                 isScrolling = false
-            } else {
-                binding.rvBreakingNews.setPadding(0, 0, 0, 0)
+                Log.d(TAG, "ShouldPaginate: true")
             }
-
-
         }
     }
 
@@ -88,6 +85,9 @@ class BreakingNewsFragment: Fragment(R.layout.fragment_breaking_news) {
                         newsAdapter.differ.submitList(newsResponse.articles.toList())
                         val totalPages = newsResponse.totalResults / QUERY_PAGE_SIZE + 2
                         isLastPage = viewModel.breakingNewsPageNumber == totalPages
+                        if(isLastPage){
+                            binding.rvBreakingNews.setPadding(0, 0, 0, 0)
+                        }
                     }
                 }
                 is Resources.Error -> {

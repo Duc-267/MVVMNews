@@ -1,5 +1,6 @@
 package com.example.mvvmnewsapp.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -49,8 +50,10 @@ class NewsViewModel(
                 if (latestBreakingNewsResponse != null) {
                     latestBreakingNewsResponse = resourcesResponse
                 } else {
-                    val oldList = latestBreakingNewsResponse?.articles
-                    oldList?.addAll(resourcesResponse.articles)
+                    val oldArticles = latestBreakingNewsResponse?.articles
+                    val newArticles = resourcesResponse.articles
+                    oldArticles?.addAll(newArticles)
+                    Log.d("BreakingNewsFragment", "size: ${oldArticles?.size}" )
                 }
                 return Resources.Success(latestBreakingNewsResponse?: resourcesResponse)
             }
